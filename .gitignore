@@ -1,0 +1,30 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.DotSettings.user
+
+## Certificados AFIP — nunca commitear
+*.p12
+*.pfx
+*.key
+*.crt
+*.pem
+
+## Variables de entorno
+.env
+.env.local
+appsettings.*.json
+!appsettings.json
+
+## NuGet
+*.nupkg
+*.snupkg
+nuget.config
+
+## Riders / VS Code
+.idea/
+.vscode/settings.json
+.vscode/launch.json

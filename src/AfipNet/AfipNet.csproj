@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <PackageId>AfipNet</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Marcos Ríos</Authors>
+    <Company>tech-marcos-rios</Company>
+    <Description>Cliente .NET para los Web Services de AFIP/ARCA. Autenticación (WSAA) y facturación electrónica (WSFE) con soporte para homologación y producción.</Description>
+    <PackageTags>afip;arca;facturacion-electronica;argentina;wsaa;wsfe;cae;dotnet</PackageTags>
+    <RepositoryUrl>https://github.com/tech-marcos-rios/afip-net</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="8.0.0" />
+  </ItemGroup>
+
+</Project>
