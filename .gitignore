@@ -1,30 +1,37 @@
-## .NET
+# Build output
 bin/
 obj/
+out/
+artifacts/
 *.user
 *.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio / Rider
 .vs/
-*.DotSettings.user
+.idea/
 
-## Certificados AFIP — nunca commitear
-*.p12
-*.pfx
-*.key
-*.crt
-*.pem
-
-## Variables de entorno
-.env
-.env.local
-appsettings.*.json
-!appsettings.json
-
-## NuGet
+# NuGet
 *.nupkg
 *.snupkg
-nuget.config
 
-## Riders / VS Code
-.idea/
-.vscode/settings.json
-.vscode/launch.json
+# Test results
+TestResults/
+coverage.*.xml
+*.trx
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+*.pfx
+*.p12
+*.key
+*.csr
+*.crt
+scripts/certs/
+appsettings.Development.json
+appsettings.Local.json
+secrets.json
