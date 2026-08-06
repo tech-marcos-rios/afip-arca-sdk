@@ -83,14 +83,14 @@ IA-AFIP/
 │   └── Afip.Arca.Sdk.csproj
 ├── tests/Afip.Arca.Sdk.Tests/     # Suite xUnit (25 tests)
 ├── implementation/                # Demo interactiva de consumo del NuGet
-│   ├── NuGet.config               # Feed local C:\GLB\artifacts + packageSourceMapping
+│   ├── NuGet.config               # Feed local D:\Code\projects\artifacts + packageSourceMapping
 │   └── Afip.Arca.Sdk.Demo/        # Consola con wizard de setup + menú de 8 operaciones
 ├── Directory.Build.props          # Versionado, reglas y PackageOutputPath centralizados
 ├── Afip.Arca.Sdk.sln
 └── README.md
 ```
 
-**Artefactos:** los `.nupkg`/`.snupkg` se publican en `C:\GLB\artifacts` (definido vía `<PackageOutputPath>`). La carpeta `implementation/` consume el paquete desde ese mismo path, simulando el ciclo real de un consumidor del NuGet.
+**Artefactos:** los `.nupkg`/`.snupkg` se publican en `D:\Code\projects\artifacts` (definido vía `<PackageOutputPath>`). La carpeta `implementation/` consume el paquete desde ese mismo path, simulando el ciclo real de un consumidor del NuGet.
 
 ---
 

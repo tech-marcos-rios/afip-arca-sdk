@@ -12,7 +12,7 @@ El proyecto incluye un [`NuGet.config`](NuGet.config) que define dos fuentes:
 
 | Source | Origen |
 |---|---|
-| `local-artifacts` | `C:\GLB\artifacts` (donde `dotnet pack` deja el `.nupkg`) |
+| `local-artifacts` | `D:\Code\projects\artifacts` (donde `dotnet pack` deja el `.nupkg`) |
 | `nuget.org` | feed público para las dependencias transitivas |
 
 Y un **packageSourceMapping** que rutea `Afip.Arca.Sdk` exclusivamente al feed local — así no hay riesgo de que NuGet baje un homónimo de nuget.org.

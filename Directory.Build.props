@@ -46,8 +46,8 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
-    <!-- Centraliza la salida de `dotnet pack` en C:\GLB\artifacts (compartida entre repos). -->
-    <PackageOutputPath>C:\GLB\artifacts</PackageOutputPath>
+    <!-- Centraliza la salida de `dotnet pack` en D:\Code\projects\artifacts (compartida entre repos, fuera de cualquier repo git). -->
+    <PackageOutputPath>D:\Code\projects\artifacts</PackageOutputPath>
   </PropertyGroup>
 
 </Project>

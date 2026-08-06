@@ -136,7 +136,7 @@ Cuando se le pida modificar este código:
 
 ## 12. Convenciones del repo
 
-- **Artefactos** (`.nupkg`, `.snupkg`) se publican en `C:\GLB\artifacts` vía `<PackageOutputPath>` en [`Directory.Build.props`](../Directory.Build.props). Convención compartida entre repos del usuario; no cambiar sin acuerdo explícito.
+- **Artefactos** (`.nupkg`, `.snupkg`) se publican en `D:\Code\projects\artifacts` vía `<PackageOutputPath>` en [`Directory.Build.props`](../Directory.Build.props). Convención compartida entre repos del usuario, fuera de cualquier repo git (`D:\Code\projects` no es un repo); no cambiar sin acuerdo explícito.
 - **Carpeta [`implementation/`](../implementation/)** contiene una demo de consumo del NuGet que vive **fuera** de la solución principal y consume el paquete desde el feed local — no usa `ProjectReference`. Si cambia la superficie pública del SDK, actualizar también esta demo en el mismo PR (es un smoke-test del paquete).
 - **Solución principal:** [`Afip.Arca.Sdk.sln`](../Afip.Arca.Sdk.sln) (librería + tests). La demo tiene su propio sln en `implementation/`.
 

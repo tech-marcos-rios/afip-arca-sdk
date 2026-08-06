@@ -238,7 +238,7 @@ A la fecha de este documento, hay cambios sin committear. El árbol contiene:
 - Versión bumpeada a 1.0.2 (Directory.Build.props).
 - Nuevos archivos: `src/Afip.Arca.Sdk/Invoicing/Models/ReceiverVatCondition.cs`, `CHANGELOG.md`, `docs/roadmap.md`, `docs/certificate-setup.md`.
 - Modificaciones: `HttpSoapInvoker.cs`, `Invoice.cs`, `InvoiceBuilder.cs`, `WsfeSoapClient.cs`, `InvoicingDemo.cs`, `SetupWizard.cs`, `New-AfipCertificate.ps1`, varios READMEs.
-- Artefactos en `C:\GLB\artifacts`: `Afip.Arca.Sdk.1.0.1.nupkg`, `1.0.2.nupkg`.
+- Artefactos en `D:\Code\projects\artifacts` (carpeta renombrada en agosto 2026, antes `C:\GLB\artifacts`): `Afip.Arca.Sdk.1.0.1.nupkg`, `1.0.2.nupkg`.
 
 Antes de empezar nuevo trabajo: **decidir si committear estos cambios como tags `v1.0.1` + `v1.0.2`, o squashearlos**. Mi recomendación: commits separados con mensajes Conventional Commits (un commit por cada fix relevante), respetando la trazabilidad de los descubrimientos.
 

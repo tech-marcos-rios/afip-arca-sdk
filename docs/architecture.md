@@ -68,7 +68,7 @@
 
 ## 3. Estructura de carpetas
 
-> Nota: el repositorio incluye además una carpeta [`implementation/`](../implementation/) con una **solución de consola separada** que consume el NuGet desde `C:\GLB\artifacts` vía `NuGet.config` (no usa `ProjectReference`). Sirve como prueba end-to-end del paquete y como referencia de uso. Toda la arquitectura descrita abajo refiere exclusivamente a la librería `src/Afip.Arca.Sdk/`.
+> Nota: el repositorio incluye además una carpeta [`implementation/`](../implementation/) con una **solución de consola separada** que consume el NuGet desde `D:\Code\projects\artifacts` vía `NuGet.config` (no usa `ProjectReference`). Sirve como prueba end-to-end del paquete y como referencia de uso. Toda la arquitectura descrita abajo refiere exclusivamente a la librería `src/Afip.Arca.Sdk/`.
 
 ```
 src/Afip.Arca.Sdk/

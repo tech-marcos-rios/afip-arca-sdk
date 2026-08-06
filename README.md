@@ -158,7 +158,7 @@ dotnet run --project Afip.Arca.Sdk.Demo
 
 ## Artefactos
 
-`dotnet pack` deja los `.nupkg`/`.snupkg` en **`C:\GLB\artifacts`** (configurado en [`Directory.Build.props`](Directory.Build.props)). La demo en `implementation/` consume desde ese mismo path vía [`NuGet.config`](implementation/NuGet.config) con `packageSourceMapping`.
+`dotnet pack` deja los `.nupkg`/`.snupkg` en **`D:\Code\projects\artifacts`** (configurado en [`Directory.Build.props`](Directory.Build.props)). La demo en `implementation/` consume desde ese mismo path vía [`NuGet.config`](implementation/NuGet.config) con `packageSourceMapping`.
 
 ---
 

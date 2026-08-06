@@ -533,7 +533,7 @@ tests/Afip.Arca.Sdk.Tests/
 
 - **SemVer 2.0.0** estricto
 - `Directory.Build.props` centraliza versión, autores, licencia (MIT), repo URL
-- Artefactos: `C:\GLB\artifacts\Afip.Arca.Sdk.{version}.nupkg`
+- Artefactos: `D:\Code\projects\artifacts\Afip.Arca.Sdk.{version}.nupkg`
 - El demo (`implementation/`) consume el NuGet desde feed local, no `ProjectReference`
 
 ### Historial de versiones
