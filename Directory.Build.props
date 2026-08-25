@@ -32,11 +32,14 @@
       CA1716: 'Set' como nombre de método choca con palabras reservadas de VB; aceptamos el riesgo.
       CA1822: marcar métodos como static por puro estilo, no por funcionalidad; lo dejamos al criterio del autor.
       CA1848: LoggerMessage delegates aceleran logs en hot-path; en este SDK los logs son muy esporádicos.
+      CA1873: mismo motivo que CA1848 — evitar la evaluación de argumentos de logging deshabilitado
+        no aporta nada acá, no es hot-path. Regla nueva que solo aparece con SDKs de .NET más
+        recientes bajo AnalysisLevel=latest-recommended (no se ve con todas las versiones del SDK).
       CA1859: pedir tipos concretos en retorno baja el desacoplamiento; preferimos abstracciones.
       CA1305: nuestros formatos están localizados explícitamente con CultureInfo.InvariantCulture donde corresponde.
       CA1031: catch general necesario en parseo defensivo de XML.
     -->
-    <NoWarn>$(NoWarn);NU5128;CA1510;CA1512;CA1513;CA1716;CA1822;CA1848;CA1859;CA1305;CA1031;CA1062;CA1303;CA2007;CA1054;CA2225;CA1034</NoWarn>
+    <NoWarn>$(NoWarn);NU5128;CA1510;CA1512;CA1513;CA1716;CA1822;CA1848;CA1873;CA1859;CA1305;CA1031;CA1062;CA1303;CA2007;CA1054;CA2225;CA1034</NoWarn>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
   </PropertyGroup>
