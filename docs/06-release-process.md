@@ -80,7 +80,51 @@ Referencia oficial: [Trusted Publishing on nuget.org — Microsoft Learn](https:
 
 ---
 
-## 5. Más allá de este documento
+## 5. Troubleshooting — problemas reales encontrados en el release de 1.0.0
+
+### `dotnet test` falla en CI con errores `CA1873` que no aparecen en local
+
+**Síntoma:** el paso `Test` del workflow falla con varios `error CA1873: Evaluation of this
+argument may be expensive and unnecessary if logging is disabled`, apuntando a llamadas
+`_logger.LogInformation(...)`/`LogWarning(...)` normales — pero localmente `dotnet build`/
+`dotnet test` compilan sin ningún warning.
+
+**Causa:** `Directory.Build.props` tiene `<AnalysisLevel>latest-recommended</AnalysisLevel>`, que
+ata el set de reglas de análisis a la versión del SDK de .NET instalada — no es un número fijo.
+El runner de GitHub Actions (`actions/setup-dotnet@v4` con `dotnet-version: 8.0.x`) puede resolver
+una versión de SDK distinta a la que tenés localmente, y esa versión puede traer reglas nuevas
+"recomendadas" que tu SDK local todavía no tiene (o viceversa). No es reproducible 1:1 entre tu
+máquina y CI mientras se use `latest-recommended`.
+
+**Solución aplicada:** se agregó `CA1873` al `<NoWarn>` de `Directory.Build.props`, con el mismo
+criterio ya documentado para `CA1848` — son logs esporádicos (renovación de TA, autorización de
+comprobante, reintentos), no hot-path, así que evitar la evaluación de argumentos no aporta nada.
+
+**Si vuelve a pasar con otra regla nueva:** mismo patrón — evaluar si la regla aplica de verdad al
+código del SDK, y si no, sumarla al `NoWarn` con un comentario explicando por qué (no suprimir a
+ciegas). Alternativa de fondo si esto se vuelve recurrente: fijar `AnalysisLevel` a un número
+concreto (ej. `8.0-recommended`) en vez de `latest-recommended`, para que CI y local usen siempre
+el mismo set de reglas sin importar qué SDK patch tengan instalado.
+
+### `NuGet/login@v1` falla con `HTTP 401` / "No matching trust policy owned by user..."
+
+**Síntoma:** el paso de login OIDC falla con:
+```
+Token exchange failed (HTTP 401)... Make sure you are using the username of the policy creator,
+not the policy owner: No matching trust policy owned by user 'X' was found.
+```
+
+**Causa:** el input `user:` de `NuGet/login@v1` tiene que ser tu **usuario de nuget.org**
+(ej. `marcos.rios`), no el owner/organización del repositorio de GitHub (`tech-marcos-rios`). Son
+dos campos distintos de la misma política de Trusted Publishing — es fácil confundirlos porque
+"Repository Owner" sí es el de GitHub, pero `user:` en el workflow es el de nuget.org.
+
+**Solución:** usar el nombre de cuenta que aparece en el dropdown **"Package Owner"** del
+formulario de la política en nuget.org, no el que pusiste en "Repository Owner".
+
+---
+
+## 6. Más allá de este documento
 
 | Necesitás | Mirá |
 |---|---|
