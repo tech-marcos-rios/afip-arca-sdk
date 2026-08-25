@@ -140,6 +140,7 @@ var sireResult = await afip.Sire.IssueAsync(new WithholdingCertificateRequest(
 | [docs/02-certificate-setup.md](docs/02-certificate-setup.md) | **Cómo obtener y configurar el certificado en ARCA** — paso a paso, end-to-end. Empezar por acá si nunca conectaste con AFIP. |
 | [docs/03-afip-api-technical-summary.md](docs/03-afip-api-technical-summary.md) | Resumen técnico de los WS de AFIP. |
 | [docs/04-architecture.md](docs/04-architecture.md) | Arquitectura, capas, ADRs. |
+| [docs/06-release-process.md](docs/06-release-process.md) | Cómo cortar y publicar una versión nueva (tag → CI/CD → nuget.org). |
 | [CHANGELOG.md](CHANGELOG.md) | Historial de versiones (Keep a Changelog + SemVer). |
 | [implementation/README.md](implementation/README.md) | Demo interactiva de consumo del NuGet. |
 | [scripts/README.md](scripts/README.md) | Script PowerShell para generar CSR + ensamblar PFX. |

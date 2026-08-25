@@ -9,6 +9,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{B0000000-0
 		docs\03-afip-api-technical-summary.md = docs\03-afip-api-technical-summary.md
 		docs\04-architecture.md = docs\04-architecture.md
 		docs\05-sdk-implementation-overview.md = docs\05-sdk-implementation-overview.md
+		docs\06-release-process.md = docs\06-release-process.md
 		README.md = README.md
 		Directory.Build.props = Directory.Build.props
 	EndProjectSection
