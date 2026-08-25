@@ -1,0 +1,52 @@
+name: Publish to NuGet.org
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify tag matches package version
+        shell: bash
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PROPS_VERSION=$(grep -oP '(?<=<VersionPrefix>)[^<]+' Directory.Build.props)
+          if [ "$TAG_VERSION" != "$PROPS_VERSION" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME (version $TAG_VERSION) does not match Directory.Build.props VersionPrefix ($PROPS_VERSION)."
+            exit 1
+          fi
+          echo "Tag version matches Directory.Build.props ($PROPS_VERSION) — continuing."
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore Afip.Arca.Sdk.sln
+
+      - name: Test
+        run: dotnet test Afip.Arca.Sdk.sln -c Release --no-restore
+
+      - name: Pack
+        run: dotnet pack src/Afip.Arca.Sdk/Afip.Arca.Sdk.csproj -c Release -o artifacts --no-restore
+
+      - name: NuGet login (OIDC → temporary API key)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: tech-marcos-rios
+
+      - name: Push to NuGet.org
+        run: dotnet nuget push "artifacts/*.nupkg" --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
