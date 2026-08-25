@@ -1,7 +1,7 @@
 # Lineamientos del Proyecto — Afip.Arca.Sdk
 
 > **OBLIGATORIO.** Este archivo define los principios, patrones y prácticas que **deben respetarse en todo el código, documentación y commit** del repositorio.
-> El documento de fundamentación se encuentra en [`docs/claude-configuration.md`](../docs/claude-configuration.md) y la arquitectura detallada en [`docs/architecture.md`](../docs/architecture.md).
+> La arquitectura detallada se encuentra en [`docs/04-architecture.md`](../docs/04-architecture.md).
 
 ---
 

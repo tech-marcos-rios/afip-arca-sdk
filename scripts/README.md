@@ -1,6 +1,6 @@
 # Scripts utilitarios
 
-> **Si es la primera vez que conectás con AFIP, leé primero [`docs/certificate-setup.md`](../docs/certificate-setup.md).** Ese documento explica el flujo completo end-to-end (adherir WSASS, generar CSR, subirlo, autorizar a los WS, ensamblar el `.pfx`). Este README cubre solo la parte automatizada (Fases 1 y 4).
+> **Si es la primera vez que conectás con AFIP, leé primero [`docs/02-certificate-setup.md`](../docs/02-certificate-setup.md).** Ese documento explica el flujo completo end-to-end (adherir WSASS, generar CSR, subirlo, autorizar a los WS, ensamblar el `.pfx`). Este README cubre solo la parte automatizada (Fases 1 y 4).
 
 ## `New-AfipCertificate.ps1`
 
@@ -33,7 +33,7 @@ Genera el material criptográfico para autenticarse contra los Web Services de A
 ### Paso 1 — Generar la solicitud (CSR)
 
 ```powershell
-cd D:\Code\projects\03-afip-net\scripts
+cd scripts
 .\New-AfipCertificate.ps1 -Mode Csr -CommonName afip-sdk-poc -Cuit 20123456789
 ```
 
@@ -74,14 +74,14 @@ services.AddAfipSdk(opts =>
     opts.Environment = AfipEnvironment.Homologation;
     opts.Cuit = "20123456789";
     opts.UseLocalCertificateSigning(c =>
-        c.FromFile(@"D:\Code\projects\03-afip-net\scripts\certs\afip-sdk-poc.pfx", "<password>"));
+        c.FromFile(@"C:\certs\afip-sdk-poc.pfx", "<password>")); // ajustá la ruta a donde tengas tu .pfx
 });
 ```
 
 O directamente con la demo:
 
 ```powershell
-cd D:\Code\projects\03-afip-net\implementation
+cd ..\implementation
 dotnet run --project Afip.Arca.Sdk.Demo
 ```
 

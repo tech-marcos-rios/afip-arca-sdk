@@ -4,10 +4,11 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{B0000000-0000-0000-0000-000000000001}"
 	ProjectSection(SolutionItems) = preProject
-		docs\architecture.md = docs\architecture.md
-		docs\afip-api-technical-summary.md = docs\afip-api-technical-summary.md
-		docs\claude-configuration.md = docs\claude-configuration.md
-		docs\portfolio-summary.md = docs\portfolio-summary.md
+		docs\01-usage-guide.md = docs\01-usage-guide.md
+		docs\02-certificate-setup.md = docs\02-certificate-setup.md
+		docs\03-afip-api-technical-summary.md = docs\03-afip-api-technical-summary.md
+		docs\04-architecture.md = docs\04-architecture.md
+		docs\05-sdk-implementation-overview.md = docs\05-sdk-implementation-overview.md
 		README.md = README.md
 		Directory.Build.props = Directory.Build.props
 	EndProjectSection

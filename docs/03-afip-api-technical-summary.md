@@ -8,7 +8,7 @@
 
 En 2024, la AFIP (Administración Federal de Ingresos Públicos) fue reorganizada como **ARCA** (Agencia de Recaudación y Control Aduanero). Los endpoints históricos (`afip.gov.ar`) **siguen activos**; en paralelo se publicaron los espejos `arca.gov.ar`. La nomenclatura técnica (WSAA, WSFEv1, etc.) se mantuvo.
 
-Esta librería usa por defecto los hosts ARCA, con fallback configurable a los hosts AFIP heredados.
+Esta librería usa por defecto los hosts AFIP heredados (`afip.gov.ar`, ver tablas §2.1 y §3.1), con override configurable vía `AfipOptions.Endpoints` hacia los espejos `arca.gov.ar` cuando haga falta.
 
 ---
 
@@ -285,7 +285,7 @@ La librería expone esto como `IInvoiceService.CancelAsync(invoiceRef, ...)` que
 | 10019 | Comprobante ya autorizado anteriormente. |
 | 10048 | ImpTotal no coincide con la suma de las parciales. |
 | 10063 | Punto de venta inexistente o inhabilitado para WSFEv1. |
-| 1000  | Token inválido o vencido. |
+| 1000  | Token inválido o vencido. **`InvoiceService` lo maneja automáticamente**: invalida el TA cacheado y reintenta una vez con uno nuevo (ver `docs/04-architecture.md` ADR-003). Si aparece dos veces seguidas, el problema no es cacheo — revisar reloj del host o vínculo del certificado en WSASS. |
 | 1005  | Cuit del Auth no coincide con el del TA. |
 
 ---
@@ -424,5 +424,3 @@ Estas no figuran explícitamente en los manuales pero son críticas en producci�
 - AFIP — [Manuales WSFEv1](https://www.afip.gob.ar/ws/documentacion/ws-factura-electronica.asp)
 - AFIP — [SIRE](https://www.afip.gob.ar/sire/)
 - AFIP — [Consultas frecuentes RG 830](https://servicioscf.afip.gob.ar/publico/abc/ABCpaso2.aspx?cat=3304)
-- Comunidad — [PyAfipWs (reingart)](https://github.com/reingart/pyafipws) — implementación de referencia de facto.
-- Comunidad — [SistemasAgiles WSFEv1 wiki](https://www.sistemasagiles.com.ar/trac/wiki/ProyectoWSFEv1).

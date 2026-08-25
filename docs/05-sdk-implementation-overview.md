@@ -1,7 +1,7 @@
 # Afip.Arca.Sdk — Documento de Implementación
 
 > **Propósito de este documento:** descripción técnica completa del paquete NuGet
-> `Afip.Arca.Sdk` (v1.1.0), incluyendo arquitectura, decisiones de diseño, API pública,
+> `Afip.Arca.Sdk` (v1.0.0), incluyendo arquitectura, decisiones de diseño, API pública,
 > implementación multi-tenant y guía de integración. Preparado para evaluación externa.
 
 ---
@@ -111,7 +111,7 @@ src/Afip.Arca.Sdk/
 ├── IAfipClient.cs                      ← Facade: Invoicing + IncomeTax + Sire
 ├── AfipClient.cs
 │
-├── MultiTenancy/                       ← Módulo multi-tenant (v1.1.0)
+├── MultiTenancy/                       ← Módulo multi-tenant
 │   ├── TenantAfipOptions.cs            ← record: datos de un tenant ya desencriptados
 │   ├── ITenantOptionsProvider.cs       ← interfaz que el consumidor implementa
 │   ├── IAfipClientFactory.cs           ← GetClientAsync / InvalidateClient
@@ -226,7 +226,7 @@ public class FacturacionService(IAfipClient afip)
             .WithVatBase(net: 10_000m, rate: VatRate.TwentyOne)
             .Build();
 
-        var result = await afip.Invoicing.AuthorizeAsync(factura, ct: ct);
+        var result = await afip.Invoicing.AuthorizeAsync(factura, cancellationToken: ct);
 
         return result.IsSuccess
             ? result.Cae!
@@ -253,7 +253,7 @@ public class FacturacionService(IAfipClientFactory factory)
             .WithVatBase(net: 10_000m, rate: VatRate.TwentyOne)
             .Build();
 
-        var result = await afip.Invoicing.AuthorizeAsync(factura, ct: ct);
+        var result = await afip.Invoicing.AuthorizeAsync(factura, cancellationToken: ct);
         return result.IsSuccess ? result.Cae! : throw new Exception("...");
     }
 }
@@ -441,7 +441,7 @@ AFIP devuelve errores dentro del payload XML con HTTP 200. El SDK los mapea a pr
 del result object:
 
 ```csharp
-var result = await afip.Invoicing.AuthorizeAsync(invoice, ct: ct);
+var result = await afip.Invoicing.AuthorizeAsync(invoice, cancellationToken: ct);
 
 if (!result.IsSuccess)
 {
@@ -468,7 +468,7 @@ else
 | **Certificados** | Se aceptan como `.pfx`/`byte[]`/`X509Certificate2`. Nunca se loguean ni serializan |
 | **Contraseñas** | Solo viven en memoria durante la carga del cert. No se almacenan en texto plano |
 | **Tokens AFIP** | `Token` y `Sign` se loguean como `[REDACTED]` |
-| **TLS** | Mínimo TLS 1.2 forzado en `HttpClient` |
+| **TLS** | No se fuerza explícitamente una versión mínima en `HttpClientHandler` — depende del default de la plataforma/.NET (TLS 1.2+ en runtimes modernos) |
 | **Estado global** | Ningún campo `static` mutable. La caché de TA vive en una instancia inyectada |
 | **Certificados en BD** | En la implementación de referencia: AES-256-GCM con nonce aleatorio por operación. La clave maestra viene de variable de entorno (`AFIP_DEMO_ENCRYPTION_KEY`) |
 | **Multi-tenant isolation** | Cada tenant tiene su propio `IAccessTicketCache` y `Pkcs7TraSigner` — un tenant no puede acceder al TA ni al certificado de otro |
@@ -508,14 +508,15 @@ tests/Afip.Arca.Sdk.Tests/
 │   └── IncomeTaxCalculatorTests.cs         ← escala, mínimos, acumulación
 ├── Invoicing/
 │   ├── InvoiceBuilderTests.cs              ← casos válidos e inválidos
-│   └── InvoiceValidatorTests.cs
+│   ├── InvoiceValidatorTests.cs
+│   └── InvoiceServiceTests.cs              ← retry ante token inválido (WSFEv1 error 1000)
 └── Support/
     └── FakeClock.cs                        ← clock determinístico
 ```
 
-- **25 tests unitarios — 25/25 pasando** (sin tocar red)
-- Los SOAP clients se testean con fixtures XML reales capturados de AFIP homologación
-- Tests de integración: `[Trait("Category", "Integration")]`, excluidos del pipeline por default
+- **28 tests unitarios — 28/28 pasando** (sin tocar red)
+- Los SOAP clients se testean mockeando `IHttpSoapInvoker` con NSubstitute y devolviendo `XElement` de respuesta construidos inline en C# — no hay fixtures XML como archivos separados
+- No existe actualmente un proyecto de tests de integración separado; las respuestas SOAP de AFIP se validan manualmente contra homologación real durante el desarrollo
 
 **Estado validado contra AFIP real (mayo 2026 — homologación):**
 
@@ -524,8 +525,8 @@ tests/Afip.Arca.Sdk.Tests/
 | `loginCms` (WSAA) | — | ✅ |
 | `FEDummy` | — | ✅ |
 | `FECompUltimoAutorizado` | — | ✅ |
-| `FECAESolicitar` — Factura B Consumidor Final | 86200173262441 | ✅ |
-| `FECAESolicitar` — Nota de Crédito B | 86200173263879 | ✅ |
+| `FECAESolicitar` — Factura B Consumidor Final | *(obtenido, no publicado)* | ✅ |
+| `FECAESolicitar` — Nota de Crédito B | *(obtenido, no publicado)* | ✅ |
 
 ---
 
@@ -538,12 +539,7 @@ tests/Afip.Arca.Sdk.Tests/
 
 ### Historial de versiones
 
-| Versión | Fecha | Cambios clave |
-|---|---|---|
-| **1.0.0** | 2026-04-30 | Versión inicial: WSAA + WSFEv1 + RG 830 + SIRE |
-| **1.0.1** | 2026-05-10 | Fix: `SOAPAction: ""` rechazado por `HttpSoapInvoker` |
-| **1.0.2** | 2026-05-15 | Fix: `CondicionIVAReceptorId` (RG 5616/2024) obligatorio |
-| **1.1.0** | 2026-06-03 | **Multi-tenancy:** `IAfipClientFactory` + `ITenantOptionsProvider` + `DynamicAfipClientFactory` |
+`1.0.0` es el release inicial — el paquete nunca se publicó antes en `nuget.org`, así que no hay versiones previas reales. Detalle completo del contenido de este release en [`CHANGELOG.md`](../CHANGELOG.md).
 
 ---
 
@@ -613,4 +609,4 @@ manualmente → los tests de caché de TA son 100% determinísticos.
 
 ---
 
-*Documento generado el 2026-06-03 — corresponde al estado del SDK en v1.1.0.*
+*Documento actualizado el 2026-08-25 — corresponde al estado del SDK en v1.0.0.*

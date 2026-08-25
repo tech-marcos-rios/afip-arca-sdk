@@ -1,13 +1,13 @@
-# 03 — Afip.Arca.Sdk
+# Afip.Arca.Sdk
 
 > GitHub: [tech-marcos-rios/afip-arca-sdk](https://github.com/tech-marcos-rios/afip-arca-sdk)
 
 SDK .NET para integración con los Web Services oficiales de **AFIP/ARCA** (Argentina).
 Cubre autenticación (WSAA), facturación electrónica (WSFEv1) y retenciones del impuesto a las ganancias (cálculo RG 830 + reporte a SIRE).
 
-[![Version](https://img.shields.io/badge/Version-1.0.2-blue)]() [![Targets](https://img.shields.io/badge/Targets-net8.0%20%7C%20netstandard2.0-purple)]() [![Tests](https://img.shields.io/badge/Tests-25%2F25-brightgreen)]() [![AFIP Homologación](https://img.shields.io/badge/AFIP_Homologaci%C3%B3n-validado-success)]() [![License](https://img.shields.io/badge/License-MIT-green)]()
+[![Version](https://img.shields.io/badge/Version-1.0.0-blue)]() [![Targets](https://img.shields.io/badge/Targets-net8.0%20%7C%20netstandard2.0-purple)]() [![Tests](https://img.shields.io/badge/Tests-28%2F28-brightgreen)]() [![AFIP Homologación](https://img.shields.io/badge/AFIP_Homologaci%C3%B3n-validado-success)]() [![License](https://img.shields.io/badge/License-MIT-green)]()
 
-> **v1.0.2** validado end-to-end contra AFIP homologación el 2026-05-15: WSAA → TA → FECAESolicitar → CAE real. Ver [CHANGELOG.md](CHANGELOG.md) y [docs/roadmap.md](docs/roadmap.md).
+> Validado end-to-end contra AFIP homologación: WSAA → TA → FECAESolicitar → CAE real. Ver [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
@@ -55,6 +55,10 @@ builder.Services.AddAfipSdk(opts =>
         c.FromFile(@"C:\certs\contribuyente.pfx", password: "secret"));
 });
 ```
+
+> ¿Tu app maneja **más de un CUIT** (ej. un SaaS donde cada cliente tiene su propio certificado)?
+> Existe un modo multi-tenant (`AddAfipClientFactory<TProvider>`) con un contenedor de DI
+> aislado por CUIT — ver [docs/01-usage-guide.md](docs/01-usage-guide.md#4-camino-b--multi-tenant).
 
 ### 2. Emitir una factura B
 
@@ -132,13 +136,11 @@ var sireResult = await afip.Sire.IssueAsync(new WithholdingCertificateRequest(
 
 | Documento | Contenido |
 |---|---|
-| [docs/certificate-setup.md](docs/certificate-setup.md) | **Cómo obtener y configurar el certificado en ARCA** — paso a paso, end-to-end. Empezar por acá si nunca conectaste con AFIP. |
-| [docs/roadmap.md](docs/roadmap.md) | **Pendientes priorizados y guía para retomar el desarrollo.** Punto de entrada para cualquier dev/IA que continúe el trabajo. |
+| [docs/01-usage-guide.md](docs/01-usage-guide.md) | **Guía de consumo del paquete** — instalación, configuración single/multi-tenant, los 3 servicios, manejo de errores. Empezar por acá si vas a integrar el SDK en tu app. |
+| [docs/02-certificate-setup.md](docs/02-certificate-setup.md) | **Cómo obtener y configurar el certificado en ARCA** — paso a paso, end-to-end. Empezar por acá si nunca conectaste con AFIP. |
+| [docs/03-afip-api-technical-summary.md](docs/03-afip-api-technical-summary.md) | Resumen técnico de los WS de AFIP. |
+| [docs/04-architecture.md](docs/04-architecture.md) | Arquitectura, capas, ADRs. |
 | [CHANGELOG.md](CHANGELOG.md) | Historial de versiones (Keep a Changelog + SemVer). |
-| [docs/architecture.md](docs/architecture.md) | Arquitectura, capas, ADRs. |
-| [docs/afip-api-technical-summary.md](docs/afip-api-technical-summary.md) | Resumen técnico de los WS de AFIP. |
-| [docs/claude-configuration.md](docs/claude-configuration.md) | Por qué y cómo está configurado Claude en este repo. |
-| [docs/portfolio-summary.md](docs/portfolio-summary.md) | Resumen ejecutivo del proyecto. |
 | [implementation/README.md](implementation/README.md) | Demo interactiva de consumo del NuGet. |
 | [scripts/README.md](scripts/README.md) | Script PowerShell para generar CSR + ensamblar PFX. |
 | [.claude/CLAUDE.md](.claude/CLAUDE.md) | Lineamientos obligatorios para contribuir. |
@@ -172,6 +174,24 @@ Dos modos soportados, elegibles en tiempo de configuración:
 | **Provider externo** | Cuando la firma vive en un HSM, Key Vault o servicio remoto. | `opts.UseExternalTicketProvider(async (svc, ct) => myProvider.GetTaAsync(svc, ct))` |
 
 El TA se cachea automáticamente en memoria por la dupla `(CUIT, service)` durante toda su validez (12 hs).
+
+---
+
+## Estado del proyecto
+
+Release inicial (`1.0.0`). Validado end-to-end contra AFIP homologación:
+
+- ✅ WSAA (`loginCms`) — autenticación y caché de TA.
+- ✅ WSFEv1 — `FEDummy`, `FECompUltimoAutorizado`, `FECAESolicitar` (Factura B y Nota de Crédito B con `CbtesAsoc`).
+- ⚠️ SIRE (retenciones) — implementado desde la especificación oficial, **todavía no probado contra AFIP real**. Tratalo como beta.
+
+Pendiente:
+
+- Validar SIRE contra AFIP real.
+- `FECompConsultar` y `FEParamGet*` (con caché).
+- Soporte multi-comprobante en una sola llamada a `FECAESolicitar`.
+
+Detalle completo en [CHANGELOG.md](CHANGELOG.md).
 
 ---
 

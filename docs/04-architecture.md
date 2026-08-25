@@ -1,6 +1,6 @@
 # Arquitectura — Afip.Arca.Sdk
 
-> Documento de arquitectura de la librería NuGet. Audiencia: desarrolladores que consumirán o extenderán el SDK. Complementa [`afip-api-technical-summary.md`](afip-api-technical-summary.md) (qué es AFIP) explicando cómo se modela en este código.
+> Documento de arquitectura de la librería NuGet. Audiencia: desarrolladores que consumirán o extenderán el SDK. Complementa [`03-afip-api-technical-summary.md`](03-afip-api-technical-summary.md) (qué es AFIP) explicando cómo se modela en este código.
 
 ---
 
@@ -64,6 +64,8 @@
 
 **Dependency Rule:** las flechas de dependencia apuntan **hacia adentro**. `Domain` no conoce SOAP. `Infrastructure` implementa las abstracciones que `Domain` define.
 
+**Multi-tenancy (capa paralela):** cuando la app sirve N CUITs, `IAfipClientFactory` (namespace `MultiTenancy/`) envuelve N instancias completas de este mismo stack — una por tenant, cada una con su propio `AfipOptions`/`IAccessTicketCache`/`IAccessTicketProvider` en un contenedor de DI hijo aislado. Ver ADR-011 y [`05-sdk-implementation-overview.md`](05-sdk-implementation-overview.md#6-implementación-multi-tenant-en-detalle) para el detalle completo.
+
 ---
 
 ## 3. Estructura de carpetas
@@ -74,18 +76,21 @@
 src/Afip.Arca.Sdk/
 ├── Afip.Arca.Sdk.csproj
 ├── AfipClient.cs                       // Facade público
+├── IAfipClient.cs
 │
 ├── Configuration/
+│   ├── AfipEndpoints.cs                // URLs por ambiente (Homologation/Production)
 │   ├── AfipEnvironment.cs              // Enum: Homologation, Production
 │   ├── AfipOptions.cs                  // Options pattern root
 │   ├── AfipOptionsValidator.cs
-│   └── ServiceCollectionExtensions.cs  // AddAfipSdk(...)
+│   └── ServiceCollectionExtensions.cs  // AddAfipSdk(...) / AddAfipClientFactory<T>(...)
 │
 ├── Authentication/                     // WSAA
+│   ├── AccessTicket.cs                 // Inmutable record
 │   ├── IAccessTicketProvider.cs
+│   ├── IInvalidatableAccessTicketProvider.cs  // Capability opcional — invalidación de TA
 │   ├── WsaaAccessTicketProvider.cs     // Strategy: firma local
 │   ├── ExternalAccessTicketProvider.cs // Strategy: TA preexistente
-│   ├── AccessTicket.cs                 // Inmutable record
 │   ├── IAccessTicketCache.cs
 │   ├── InMemoryAccessTicketCache.cs
 │   ├── Cms/
@@ -104,10 +109,10 @@ src/Afip.Arca.Sdk/
 │   │   ├── InvoiceType.cs              // Enum (FacturaA, NotaCreditoB, etc.)
 │   │   ├── DocumentType.cs             // Enum (Cuit=80, Dni=96, ...)
 │   │   ├── Concept.cs                  // Enum (Products=1, Services=2, Mixed=3)
-│   │   ├── VatRate.cs                  // Enum (TwentyOne=5, TenFive=4, ...)
+│   │   ├── VatRate.cs                  // Enum (TwentyOne=5, TenAndHalf=4, ...)
 │   │   ├── VatLine.cs                  // Rate + base + amount
 │   │   ├── ReceiverVatCondition.cs     // Enum (RG 5616/2024 — CondicionIVAReceptorId)
-│   │   ├── Currency.cs                 // Pes, Usd, Eur, ...
+│   │   ├── Currency.cs                 // ArgentinePeso, UsDollar, Euro
 │   │   ├── InvoiceReference.cs         // PtoVta + Number + Type
 │   │   ├── InvoiceAuthorizationResult.cs
 │   │   ├── InvoiceObservation.cs
@@ -123,45 +128,44 @@ src/Afip.Arca.Sdk/
 │   │   ├── IncomeTaxCalculator.cs      // Implementa RG 830
 │   │   ├── IIncomeTaxScaleProvider.cs
 │   │   ├── BuiltInIncomeTaxScaleProvider.cs   // RG 5423 (oct 2024)
-│   │   ├── Models/
-│   │   │   ├── IncomeTaxRegime.cs
-│   │   │   ├── IncomeTaxScale.cs
-│   │   │   ├── IncomeTaxScaleBracket.cs
-│   │   │   ├── IncomeTaxWithholdingRequest.cs
-│   │   │   └── IncomeTaxWithholdingResult.cs
-│   │   └── PaymentAccumulator.cs       // Acumula pagos del mes
-│   ├── Reporting/                      // SIRE
-│   │   ├── ISireService.cs
-│   │   ├── SireService.cs
-│   │   ├── Models/
-│   │   │   ├── WithholdingCertificate.cs
-│   │   │   ├── WithholdingCertificateRequest.cs
-│   │   │   └── WithholdingCertificateResult.cs
-│   │   └── Soap/
-│   │       └── SireSoapClient.cs
-│   └── Validation/
-│       └── WithholdingValidator.cs
+│   │   └── Models/
+│   │       ├── IncomeTaxRegime.cs
+│   │       ├── IncomeTaxScale.cs
+│   │       ├── IncomeTaxScaleBracket.cs
+│   │       ├── IncomeTaxWithholdingRequest.cs
+│   │       └── IncomeTaxWithholdingResult.cs
+│   └── Reporting/                      // SIRE
+│       ├── ISireService.cs
+│       ├── SireService.cs
+│       ├── Models/
+│       │   ├── SubjectCondition.cs
+│       │   ├── TaxCode.cs
+│       │   ├── WithholdingCertificateRequest.cs
+│       │   └── WithholdingCertificateResult.cs
+│       └── Soap/
+│           └── SireSoapClient.cs
 │
-├── Common/
-│   ├── Exceptions/
-│   │   ├── AfipException.cs                  // Base
-│   │   ├── AfipAuthenticationException.cs    // WSAA
-│   │   ├── AfipBusinessException.cs          // Errores de negocio AFIP
-│   │   ├── AfipTransportException.cs         // SOAP fault / HTTP
-│   │   └── AfipValidationException.cs        // Pre-llamada
-│   ├── Time/
-│   │   ├── IClock.cs
-│   │   └── SystemClock.cs
-│   ├── Logging/
-│   │   └── LogMessages.cs                    // High-perf logging (LoggerMessage)
-│   └── Soap/
-│       ├── IHttpSoapInvoker.cs
-│       ├── HttpSoapInvoker.cs
-│       ├── SoapEnvelope.cs
-│       └── SoapFault.cs
+├── MultiTenancy/                       // Ver ADR-011
+│   ├── IAfipClientFactory.cs
+│   ├── DynamicAfipClientFactory.cs
+│   ├── ITenantOptionsProvider.cs       // Interfaz que el consumidor implementa
+│   ├── TenantAfipOptions.cs
+│   └── TenantNotFoundException.cs
 │
-└── Internal/                                  // Helpers no públicos
-    └── XmlExtensions.cs
+└── Common/
+    ├── Exceptions/
+    │   ├── AfipException.cs                  // Base
+    │   ├── AfipAuthenticationException.cs    // WSAA
+    │   ├── AfipBusinessException.cs          // Errores de negocio AFIP
+    │   ├── AfipTransportException.cs         // SOAP fault / HTTP
+    │   └── AfipValidationException.cs        // Pre-llamada
+    ├── Time/
+    │   ├── IClock.cs
+    │   └── SystemClock.cs
+    └── Soap/
+        ├── IHttpSoapInvoker.cs
+        ├── HttpSoapInvoker.cs
+        └── SoapFault.cs
 ```
 
 ---
@@ -203,13 +207,20 @@ services.AddAfipSdk(opts =>
 
 **Consecuencias:** el dominio no sabe quién firma. Cambiar de uno a otro es una línea.
 
-### ADR-003 — Caché de TA: `IAccessTicketCache`
+Ambas implementaciones además implementan `IInvalidatableAccessTicketProvider` (interfaz
+opcional, ver ADR-003) — un consumidor con un `IAccessTicketProvider` propio (ej. HSM sin
+caché local) puede no implementarla sin romper nada; simplemente no participa del retry
+automático descripto abajo.
+
+### ADR-003 — Caché de TA: `IAccessTicketCache` e invalidación ante token inválido
 
 **Contexto:** un TA dura 12 hs; pedir uno nuevo por cada llamada es lento, caro, y termina chocando con `coe.alreadyAuthenticated`.
 
-**Decisión:** abstracción `IAccessTicketCache` con `TryGet(cuit, service)` / `Set(ticket)`. Implementación por defecto en memoria (`InMemoryAccessTicketCache` con `ConcurrentDictionary` + reloj inyectado). Implementaciones alternativas (Redis, disco) quedan como ejercicio del consumidor — la abstracción está lista.
+**Decisión:** abstracción `IAccessTicketCache` con `TryGet(cuit, service)` / `Set(ticket)` / `Invalidate(cuit, service)`. Implementación por defecto en memoria (`InMemoryAccessTicketCache` con `ConcurrentDictionary` + reloj inyectado). Implementaciones alternativas (Redis, disco) quedan como ejercicio del consumidor — la abstracción está lista.
 
-**Consecuencias:** ahorro masivo de llamadas WSAA en cargas reales. Test trivial mockeando la caché.
+`Invalidate` no se llama directamente desde los servicios (`InvoiceService`, `SireService`) — eso acoplaría la orquestación de negocio al detalle de caché. En su lugar, `WsaaAccessTicketProvider` y `ExternalAccessTicketProvider` exponen `IInvalidatableAccessTicketProvider.Invalidate(service)`, que resuelve el CUIT actual y delega en la caché. `InvoiceService` detecta el error WSFEv1 `1000` ("Token inválido o vencido") — devuelto por `FECAESolicitar` dentro del resultado, o lanzado como `AfipBusinessException` por `FECompUltimoAutorizado` — hace un `is IInvalidatableAccessTicketProvider` sobre su `IAccessTicketProvider` inyectado y, si aplica, invalida y reintenta la operación una única vez con un TA fresco.
+
+**Consecuencias:** ahorro masivo de llamadas WSAA en cargas reales. Test trivial mockeando la caché. El retry ante token inválido es opt-in por capability-check (Interface Segregation): no rompe `IAccessTicketProvider` para implementaciones custom que no cachean nada localmente.
 
 ### ADR-004 — Errores de negocio NO son excepciones
 
@@ -221,7 +232,10 @@ services.AddAfipSdk(opts =>
 public sealed record InvoiceAuthorizationResult(
     bool IsSuccess,
     string? Cae,
-    DateTime? CaeExpiration,
+    DateOnly? CaeExpiration,
+    long? AssignedNumber,
+    int PointOfSale,
+    InvoiceType Type,
     IReadOnlyList<InvoiceObservation> Observations,
     IReadOnlyList<InvoiceError> Errors);
 ```
@@ -242,7 +256,7 @@ Las excepciones quedan reservadas para:
 - `Microsoft.Extensions.Logging.Abstractions`
 - `Microsoft.Extensions.Http.Polly`
 
-Sin DI: hay un constructor manual `AfipClient.Create(AfipOptions)` para escenarios poco frecuentes.
+**Sin DI:** hoy no hay un constructor manual soportado (`AfipClient` solo se construye con `IInvoiceService`/`IIncomeTaxCalculator`/`ISireService` ya resueltos). Armar el stack completo a mano (HttpClient con Polly, ticket provider, SOAP clients) fuera de `IServiceCollection` no está documentado ni es el camino recomendado.
 
 ### ADR-006 — Sin code-gen de WSDL (clientes SOAP a mano)
 
@@ -253,7 +267,7 @@ Sin DI: hay un constructor manual `AfipClient.Create(AfipOptions)` para escenari
 **Consecuencias:**
 - ✅ Diff-friendly cuando AFIP cambia algo.
 - ✅ Sin dependencia adicional a `System.ServiceModel.*`.
-- ⚠️ Más superficie de tests (cubierta con fixtures XML).
+- ⚠️ Más superficie de tests — se cubre mockeando `IHttpSoapInvoker` con NSubstitute y devolviendo `XElement` construidos inline en C# (no hay fixtures XML como archivos separados; ver ADR de testing en la sección 6).
 
 ### ADR-007 — Validación previa con builder + validator
 
@@ -267,11 +281,11 @@ Sin DI: hay un constructor manual `AfipClient.Create(AfipOptions)` para escenari
 
 **Decisión:** `IClock` con `SystemClock` por defecto. En tests, `FakeClock` (provisto por el proyecto de tests).
 
-### ADR-009 — Logging vía `LoggerMessage` source generator
+### ADR-009 — Logging clásico con `ILogger<T>`
 
-**Contexto:** logging clásico con strings interpolados es alocador y lento en hot path.
+**Contexto:** el SDK loguea eventos poco frecuentes (renovación de TA, autorización de comprobante, reintentos) — no hot-path de alta frecuencia.
 
-**Decisión:** todos los logs pasan por métodos generados con `[LoggerMessage]` (atributo del source generator de `Microsoft.Extensions.Logging`). Beneficios: zero allocations, mensajes consistentes, formato estructurado.
+**Decisión:** `ILogger<T>.LogInformation(...)`/`LogWarning(...)` clásicos con plantillas de mensaje estructuradas (ej. `"Authorizing comprobante type {Type} pos {Pos} number {Number}"`), sin el source generator `[LoggerMessage]`. Se evaluó y se descartó: el overhead de alocación es irrelevante a la frecuencia real de estos logs, y el atributo agrega ceremonia (clase parcial + método estático) sin beneficio medible acá.
 
 ### ADR-010 — `ReceiverVatCondition` como enum modelado, no opcional (RG 5616/2024)
 
@@ -284,7 +298,20 @@ Sin DI: hay un constructor manual `AfipClient.Create(AfipOptions)` para escenari
 - ✅ Para casos no triviales (Monotributo, Exento, etc.) la API es explícita.
 - ⚠️ Si AFIP suma valores nuevos, hay que extender el enum (bump minor).
 
-**Descubierto en producción:** este campo no estaba en v1.0.0; se agregó en v1.0.2 después de que AFIP rechazara la primera factura emitida con observación 10246.
+**Descubierto en producción:** durante el desarrollo, AFIP rechazó la primera factura de prueba emitida con observación 10246 hasta que se agregó este campo — quedó incluido desde el release inicial (1.0.0).
+
+### ADR-011 — Multi-tenancy vía contenedores de DI hijos (`MultiTenancy/`)
+
+**Contexto:** algunos consumidores sirven N contribuyentes (CUITs y certificados distintos) desde el mismo proceso — típicamente un SaaS de facturación — y ninguna configuración/caché/certificado puede filtrarse entre tenants.
+
+**Decisión:** `IAfipClientFactory` (implementación: `DynamicAfipClientFactory`) resuelve un `ITenantOptionsProvider` (implementado por el consumidor, lee de su propia DB/secretos) y arma, lazily por tenant, un `ServiceCollection` nuevo con su propio `AfipOptions`/`IAccessTicketCache`/`IAccessTicketProvider`/SOAP clients — un `ServiceProvider` completamente aislado por CUIT. Solo `IHttpClientFactory` e `ILoggerFactory` se comparten desde el contenedor raíz (no tienen secretos). `InvalidateClient(tenantId)` disposea el contenedor de un tenant puntual (ej. tras rotar su certificado).
+
+**Consecuencias:**
+- ✅ Aislamiento estructural, no por convención: no existe ningún campo mutable compartido con el CUIT/certificado "actual" — cada tenant es un grafo de objetos separado en memoria.
+- ✅ Agregar tenants nuevos no requiere reiniciar el proceso.
+- ⚠️ Un `SemaphoreSlim` con double-checked locking evita construir el mismo contenedor dos veces bajo carga concurrente.
+
+Detalle completo (trace paso a paso, diagrama del árbol de contenedores) en [`05-sdk-implementation-overview.md`](05-sdk-implementation-overview.md#6-implementación-multi-tenant-en-detalle).
 
 ---
 
@@ -315,10 +342,10 @@ public sealed class BillingService
             .AtPointOfSale(1)
             .ToConsumerFinal()                    // doc type 99, doc nro 0
             .WithDate(DateOnly.FromDateTime(DateTime.Today))
-            .WithVatBase(amount: 1000m, rate: VatRate.TwentyOne)
+            .WithVatBase(net: 1000m, rate: VatRate.TwentyOne)
             .Build();
 
-        var result = await _afip.Invoicing.AuthorizeAsync(invoice, ct);
+        var result = await _afip.Invoicing.AuthorizeAsync(invoice, cancellationToken: ct);
 
         return result.IsSuccess
             ? result.Cae!
@@ -333,9 +360,9 @@ public sealed class BillingService
 
 | Tipo | Carpeta | Qué se testea |
 |---|---|---|
-| Unit | `tests/Afip.Arca.Sdk.Tests/` | Calculator, builders, validators, parsers SOAP, caché, signers (con cert dummy). Sin red. |
-| Integration | `tests/Afip.Arca.Sdk.IntegrationTests/` | Contra homologación real. Excluidos del CI por defecto (`[Trait("Category","Integration")]`). |
-| Fixtures | `tests/Afip.Arca.Sdk.Tests/Fixtures/*.xml` | Respuestas SOAP capturadas para tests de parsing. |
+| Unit | `tests/Afip.Arca.Sdk.Tests/` | Calculator, builders, validators, caché de TA, TRA builder, y el retry ante token inválido de `InvoiceService`. Sin red — los SOAP clients se testean mockeando `IHttpSoapInvoker` con NSubstitute y devolviendo `XElement` de respuesta construidos inline en C#. |
+
+No hay actualmente un proyecto de tests de integración separado ni fixtures XML como archivos; las respuestas SOAP de AFIP se validan manualmente contra homologación real durante el desarrollo (ver estado en el [README](../README.md#estado-del-proyecto)).
 
 ---
 
@@ -348,7 +375,7 @@ public sealed class BillingService
 | WSFEv1 `FECAESolicitar` | < 1.5 s | Determinado por AFIP, no por nosotros. |
 | Cálculo RG 830 | < 0.1 ms | Aritmética pura. |
 
-Nada en el SDK aloca colecciones en hot path innecesariamente; los DTOs son `record struct` cuando son ≤ 16 bytes.
+Nada en el SDK aloca colecciones en hot path innecesariamente. Los DTOs públicos son `record` (tipo referencia, inmutables por `init`); no se usa `record struct` en el código actual.
 
 ---
 

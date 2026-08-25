@@ -70,7 +70,7 @@ Esto se hace **localmente**, no en el portal AFIP. El CSR (Certificate Signing R
 ### Comando
 
 ```powershell
-cd D:\Code\projects\03-afip-net\scripts
+cd scripts
 .\New-AfipCertificate.ps1 -Mode Csr -CommonName afipsdkpoc -Cuit <tu-cuit-11-digitos>
 ```
 
@@ -115,7 +115,7 @@ Esto es manual y se hace desde el navegador.
 ### Cómo abrir y copiar el CSR
 
 ```powershell
-notepad D:\Code\projects\03-afip-net\scripts\certs\<CN>.csr
+notepad scripts\certs\<CN>.csr
 ```
 
 Ctrl+A → Ctrl+C → pegar en el formulario.
@@ -124,11 +124,11 @@ Ctrl+A → Ctrl+C → pegar en el formulario.
 
 El campo **"Resultado"** del formulario se llena con un bloque entre `-----BEGIN CERTIFICATE-----` y `-----END CERTIFICATE-----`. Eso es tu certificado firmado.
 
-**Guardalo en disco** como `D:\Code\projects\03-afip-net\scripts\certs\<CN>.crt`. Una forma fácil:
+**Guardalo en disco** como `scripts\certs\<CN>.crt` (dentro del repo — ya está en `.gitignore`). Una forma fácil, parado en la raíz del repo:
 
 ```powershell
 # Copiar el contenido del campo Resultado al portapapeles, después:
-Get-Clipboard | Set-Content -Path 'D:\Code\projects\03-afip-net\scripts\certs\afipsdkpoc.crt' -Encoding utf8
+Get-Clipboard | Set-Content -Path 'scripts\certs\afipsdkpoc.crt' -Encoding utf8
 ```
 
 ---
@@ -165,11 +165,11 @@ Crear el DN no autoriza automáticamente a usar los WS de negocio. Cada WS al qu
 El SDK no consume `.crt` + `.key` por separado: necesita un `.pfx` (PKCS#12) que combine ambos y esté protegido por contraseña.
 
 ```powershell
-cd D:\Code\projects\03-afip-net\scripts
-.\New-AfipCertificate.ps1 -Mode Pfx -CommonName afipsdkpoc -CrtPath D:\Code\projects\03-afip-net\scripts\certs\afipsdkpoc.crt
+cd scripts
+.\New-AfipCertificate.ps1 -Mode Pfx -CommonName afipsdkpoc -CrtPath "$PWD\certs\afipsdkpoc.crt"
 ```
 
-> 💡 Pasale **ruta absoluta** al `-CrtPath`. PowerShell y .NET interpretan rutas relativas distinto (`$PWD` ≠ `Environment.CurrentDirectory`); el script ya normaliza esto pero es buena costumbre.
+> 💡 Pasale **ruta absoluta** al `-CrtPath` — por eso el ejemplo usa `$PWD` en vez de una ruta relativa. PowerShell y .NET interpretan rutas relativas distinto (`$PWD` ≠ `Environment.CurrentDirectory`); el script ya normaliza esto pero es buena costumbre.
 
 El script te pide la contraseña dos veces (anotala — el SDK la necesita).
 
@@ -189,15 +189,15 @@ services.AddAfipSdk(opts =>
     opts.Environment = AfipEnvironment.Homologation;
     opts.Cuit = "20123456789";
     opts.UseLocalCertificateSigning(c =>
-        c.FromFile(@"D:\Code\projects\03-afip-net\scripts\certs\afipsdkpoc.pfx",
+        c.FromFile(@"scripts\certs\afipsdkpoc.pfx", // ruta relativa a la raíz del repo — ajustala si tu app vive en otro lado
                    password: "<tu password>"));
 });
 ```
 
-O directamente vía la demo interactiva del repo:
+O directamente vía la demo interactiva del repo, parado en la raíz:
 
 ```powershell
-cd D:\Code\projects\03-afip-net\implementation
+cd implementation
 dotnet run --project Afip.Arca.Sdk.Demo
 ```
 
@@ -240,7 +240,7 @@ Los certificados de AFIP vencen a los **2 años**. Cuando se acerque el vencimie
 | WSAA responde `cms.cert.notFound` | El cert no está autorizado al servicio | Volvé a WSASS → "Crear autorización a servicio" para `wsfe` (Fase 3). |
 | WSAA responde `coe.alreadyAuthenticated` | Re-uso del `uniqueId` en el TRA | Esperá 10 minutos o reiniciá el proceso. El SDK usa `unix_seconds + counter`, lo cual normalmente alcanza para no colisionar. |
 | WSFEv1 responde `1000` (Token inválido) | Estás usando producción con un cert de homologación o viceversa | Verificá que `AfipEnvironment` matchee con el ambiente para el que se emitió el certificado. |
-| WSFEv1 responde `10246` ("Campo Condición Frente al IVA del receptor es obligatorio") | RG 5616/2024 — el campo `CondicionIVAReceptorId` es ahora obligatorio | Necesitás `Afip.Arca.Sdk` **≥ 1.0.2**, que ya emite el campo automáticamente. Si tu receptor es CUIT o DNI, usá `.WithReceiverVatCondition(...)` en el builder. |
+| WSFEv1 responde `10246` ("Campo Condición Frente al IVA del receptor es obligatorio") | RG 5616/2024 — el campo `CondicionIVAReceptorId` es ahora obligatorio | El SDK ya emite el campo automáticamente. Si tu receptor es CUIT o DNI, usá `.WithReceiverVatCondition(...)` en el builder. |
 | Polly retry exponencial saltando | Homologación caída (frecuente lunes/martes a la mañana) | Probá `FEDummy` aparte para confirmar. Si todos los subsistemas están OK pero igual hay errores, abrí un caso a AFIP. |
 
 ---
