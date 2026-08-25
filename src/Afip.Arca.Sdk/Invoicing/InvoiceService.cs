@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using Afip.Arca.Sdk.Authentication;
@@ -16,6 +18,9 @@ namespace Afip.Arca.Sdk.Invoicing;
 /// </summary>
 public sealed class InvoiceService : IInvoiceService
 {
+    /// <summary>WSFEv1 error code AFIP returns for "Token inválido o vencido".</summary>
+    private const int InvalidOrExpiredTokenErrorCode = 1000;
+
     private readonly IAccessTicketProvider _ticketProvider;
     private readonly WsfeSoapClient _soap;
     private readonly InvoiceValidator _validator;
@@ -48,8 +53,6 @@ public sealed class InvoiceService : IInvoiceService
             throw new AfipValidationException(failures);
         }
 
-        var ticket = await _ticketProvider.GetAsync(WsfeSoapClient.ServiceName, cancellationToken).ConfigureAwait(false);
-
         long number;
         if (explicitNumber is { } e)
         {
@@ -57,15 +60,24 @@ public sealed class InvoiceService : IInvoiceService
         }
         else
         {
-            var last = await _soap.GetLastAuthorizedNumberAsync(ticket, invoice.Type, invoice.PointOfSale, cancellationToken).ConfigureAwait(false);
-            number = last + 1;
+            number = await GetLastAuthorizedNumberAsync(invoice.Type, invoice.PointOfSale, cancellationToken).ConfigureAwait(false) + 1;
         }
 
         _logger.LogInformation(
             "Authorizing comprobante type {Type} pos {Pos} number {Number}",
             invoice.Type, invoice.PointOfSale, number);
 
+        var ticket = await _ticketProvider.GetAsync(WsfeSoapClient.ServiceName, cancellationToken).ConfigureAwait(false);
         var result = await _soap.AuthorizeAsync(ticket, invoice, number, cancellationToken).ConfigureAwait(false);
+
+        if (!result.IsSuccess && HasInvalidTokenError(result.Errors) && TryGetInvalidatableProvider(out var invalidatable))
+        {
+            _logger.LogWarning(
+                "WSFE rejected the request because the cached token is invalid/expired; invalidating and retrying once");
+            invalidatable.Invalidate(WsfeSoapClient.ServiceName);
+            var freshTicket = await _ticketProvider.GetAsync(WsfeSoapClient.ServiceName, cancellationToken).ConfigureAwait(false);
+            result = await _soap.AuthorizeAsync(freshTicket, invoice, number, cancellationToken).ConfigureAwait(false);
+        }
 
         if (result.IsSuccess)
         {
@@ -115,12 +127,47 @@ public sealed class InvoiceService : IInvoiceService
         CancellationToken cancellationToken = default)
     {
         var ticket = await _ticketProvider.GetAsync(WsfeSoapClient.ServiceName, cancellationToken).ConfigureAwait(false);
-        return await _soap.GetLastAuthorizedNumberAsync(ticket, type, pointOfSale, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            return await _soap.GetLastAuthorizedNumberAsync(ticket, type, pointOfSale, cancellationToken).ConfigureAwait(false);
+        }
+        catch (AfipBusinessException ex) when (HasInvalidTokenError(ex.Errors) && TryGetInvalidatableProvider(out var invalidatable))
+        {
+            _logger.LogWarning(
+                "WSFE rejected the request because the cached token is invalid/expired; invalidating and retrying once");
+            invalidatable.Invalidate(WsfeSoapClient.ServiceName);
+            var freshTicket = await _ticketProvider.GetAsync(WsfeSoapClient.ServiceName, cancellationToken).ConfigureAwait(false);
+            return await _soap.GetLastAuthorizedNumberAsync(freshTicket, type, pointOfSale, cancellationToken).ConfigureAwait(false);
+        }
     }
 
     /// <inheritdoc />
     public Task<(string AppServer, string DbServer, string AuthServer)> HealthCheckAsync(CancellationToken cancellationToken = default) =>
         _soap.DummyAsync(cancellationToken);
+
+    private bool TryGetInvalidatableProvider([NotNullWhen(true)] out IInvalidatableAccessTicketProvider? invalidatable)
+    {
+        invalidatable = _ticketProvider as IInvalidatableAccessTicketProvider;
+        return invalidatable is not null;
+    }
+
+    private static bool HasInvalidTokenError(IReadOnlyList<InvoiceError> errors)
+    {
+        foreach (var error in errors)
+        {
+            if (error.Code == InvalidOrExpiredTokenErrorCode) return true;
+        }
+        return false;
+    }
+
+    private static bool HasInvalidTokenError(IReadOnlyList<(int Code, string Message)> errors)
+    {
+        foreach (var error in errors)
+        {
+            if (error.Code == InvalidOrExpiredTokenErrorCode) return true;
+        }
+        return false;
+    }
 
     private static InvoiceType ResolveCreditNoteType(InvoiceType originalType) =>
         originalType switch

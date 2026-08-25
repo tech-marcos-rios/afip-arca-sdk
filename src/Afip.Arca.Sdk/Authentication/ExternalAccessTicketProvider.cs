@@ -12,7 +12,7 @@ namespace Afip.Arca.Sdk.Authentication;
 /// to an external callback. Useful for scenarios where signing is performed by a
 /// dedicated service (HSM, key vault, sidecar).
 /// </summary>
-public sealed class ExternalAccessTicketProvider : IAccessTicketProvider, IDisposable
+public sealed class ExternalAccessTicketProvider : IAccessTicketProvider, IInvalidatableAccessTicketProvider, IDisposable
 {
     private readonly IAccessTicketCache _cache;
     private readonly IOptionsMonitor<AfipOptions> _options;
@@ -62,6 +62,13 @@ public sealed class ExternalAccessTicketProvider : IAccessTicketProvider, IDispo
         {
             _gate.Release();
         }
+    }
+
+    /// <inheritdoc />
+    public void Invalidate(string service)
+    {
+        if (string.IsNullOrWhiteSpace(service)) throw new ArgumentException("Service required.", nameof(service));
+        _cache.Invalidate(_options.CurrentValue.Cuit, service);
     }
 
     /// <inheritdoc />

@@ -14,7 +14,7 @@ namespace Afip.Arca.Sdk.Authentication;
 /// <see cref="IAccessTicketProvider"/> implementation that signs the TRA locally with
 /// an X.509 certificate and calls WSAA's <c>loginCms</c> to obtain the TA.
 /// </summary>
-public sealed class WsaaAccessTicketProvider : IAccessTicketProvider, IDisposable
+public sealed class WsaaAccessTicketProvider : IAccessTicketProvider, IInvalidatableAccessTicketProvider, IDisposable
 {
     private readonly IAccessTicketCache _cache;
     private readonly TraDocumentBuilder _traBuilder;
@@ -78,6 +78,13 @@ public sealed class WsaaAccessTicketProvider : IAccessTicketProvider, IDisposabl
         {
             _gate.Release();
         }
+    }
+
+    /// <inheritdoc />
+    public void Invalidate(string service)
+    {
+        if (string.IsNullOrWhiteSpace(service)) throw new ArgumentException("Service required.", nameof(service));
+        _cache.Invalidate(_options.CurrentValue.Cuit, service);
     }
 
     /// <inheritdoc />
