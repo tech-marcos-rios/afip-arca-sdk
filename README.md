@@ -132,6 +132,10 @@ var sireResult = await afip.Sire.IssueAsync(new WithholdingCertificateRequest(
 
 ---
 
+## Git Flow
+
+GitHub Flow: `master` protegida (PR + CI en verde obligatorios, sin push directo), ramas `feature/*` / `fix/*` / `docs/*`, sin rama `develop` — apropiado para una librería versionada con SemVer donde `master` siempre debe ser publicable. Detalle completo en [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Documentación
 
 | Documento | Contenido |
